@@ -56,14 +56,23 @@ class _MyHomePageState extends State<MyHomePage> {
     }).toList();
   }
 
-  void _addNewTransaction(String title, double amount) {
+  void _addNewTransaction(
+      String title, double amount, DateTime selectedPicker) {
     final newTx = Transaction(
         id: DateTime.now().toString(),
         amount: amount,
         title: title,
-        date: DateTime.now());
+        date: selectedPicker);
     setState(() {
       _userTransaction.add(newTx);
+    });
+  }
+
+  void _deleteTransaction(String id) {
+    setState(() {
+      _userTransaction.removeWhere((element) {
+        return element.id == id;
+      });
     });
   }
 
@@ -74,7 +83,9 @@ class _MyHomePageState extends State<MyHomePage> {
         return GestureDetector(
           onTap: () {},
           behavior: HitTestBehavior.opaque,
-          child: NewTransaction(addTx: _addNewTransaction),
+          child: NewTransaction(
+            addTx: _addNewTransaction,
+          ),
         );
       },
     );
@@ -99,10 +110,9 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Chart(recentTransaction: _recentTransactions),
-            // const UserTransaction()
             TransactionList(
-              transactions: _userTransaction,
-            )
+                transactions: _userTransaction,
+                deleteTransaction: _deleteTransaction)
           ],
         ),
       ),

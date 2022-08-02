@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import './widgets/transaction_list.dart';
 import './models/transaction.dart';
@@ -56,6 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }).toList();
   }
 
+  bool _showChart = false;
   void _addNewTransaction(
       String title, double amount, DateTime selectedPicker) {
     final newTx = Transaction(
@@ -93,33 +96,85 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Personal Expenses',
-          style: TextStyle(fontFamily: 'OpenSans'),
-        ),
-        actions: <Widget>[
-          IconButton(
-              onPressed: () => startAddNewTransaction(context),
-              icon: const Icon(Icons.add))
-        ],
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final appBar = AppBar(
+      title: const Text(
+        'Personal Expenses',
+        style: TextStyle(fontFamily: 'OpenSans'),
       ),
+      actions: <Widget>[
+        IconButton(
+            onPressed: () => startAddNewTransaction(context),
+            icon: const Icon(Icons.add))
+      ],
+    );
+    final txListWidget = SizedBox(
+      height: (mediaQuery.size.height -
+              appBar.preferredSize.height -
+              mediaQuery.padding.top) *
+          0.7,
+      child: TransactionList(
+          transactions: _userTransaction,
+          deleteTransaction: _deleteTransaction),
+    );
+    List<Widget> _buildLandscapeContent() {
+      return [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text('Show chart'),
+            Switch(
+                value: _showChart,
+                onChanged: (val) {
+                  setState(() {
+                    _showChart = val;
+                  });
+                })
+          ],
+        ),
+        _showChart
+            ? (SizedBox(
+                height: (mediaQuery.size.height -
+                        appBar.preferredSize.height -
+                        mediaQuery.padding.top) *
+                    0.7,
+                child: Chart(recentTransaction: _recentTransactions)))
+            : txListWidget
+      ];
+    }
+
+    List<Widget> _buildPortraitContent() {
+      return [
+        SizedBox(
+            height: (mediaQuery.size.height -
+                    appBar.preferredSize.height -
+                    mediaQuery.padding.top) *
+                0.3,
+            child: Chart(recentTransaction: _recentTransactions)),
+        txListWidget
+      ];
+    }
+
+    return Scaffold(
+      appBar: appBar,
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Chart(recentTransaction: _recentTransactions),
-            TransactionList(
-                transactions: _userTransaction,
-                deleteTransaction: _deleteTransaction)
+            if (isLandscape) ..._buildLandscapeContent(),
+            if (!isLandscape) ..._buildPortraitContent(),
+            // if (isLandscape)
+            //  ,
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () => startAddNewTransaction(context),
-      ),
+      floatingActionButton: Platform.isIOS
+          ? Container()
+          : FloatingActionButton(
+              child: const Icon(Icons.add),
+              onPressed: () => startAddNewTransaction(context),
+            ),
     );
   }
 }
